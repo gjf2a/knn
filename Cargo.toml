@@ -8,4 +8,4 @@ edition = "2021"
 
 [dependencies]
 supervised_learning = {git = "https://github.com/gjf2a/supervised_learning"}
-hash_histogram = "0.5.1"
+hash_histogram = "0.5.2"
