@@ -1,6 +1,7 @@
 use supervised_learning::Classifier;
 use hash_histogram::HashHistogram;
 use std::cmp::Ordering;
+use std::fmt::Debug;
 use std::hash::Hash;
 
 pub struct Knn<L: Clone, I, M, D: Fn(&I,&I) -> M> {
@@ -19,7 +20,7 @@ impl<L: Clone, I, M, D: Fn(&I,&I) -> M> Knn<L, I, M, D> {
     }
 }
 
-impl<L: Clone+Ord+Hash+Eq, I: Clone, M: Copy + PartialEq + PartialOrd, D: Fn(&I,&I) -> M> Classifier<I,L> for Knn<L, I, M, D> {
+impl<L: Clone+Ord+Hash+Eq+Debug, I: Clone, M: Copy + PartialEq + PartialOrd, D: Fn(&I,&I) -> M> Classifier<I,L> for Knn<L, I, M, D> {
     fn train(&mut self, training_images: &Vec<(L,I)>) {
         for img in training_images {
             self.add_example((img.0.clone(), img.1.clone()));
