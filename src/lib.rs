@@ -61,7 +61,6 @@ mod tests {
         classifier.train(&labeled_data);
         for (label, value) in [(0, 10.0), (1, 0.0), (0, 3.3), (1, 2.9)].iter() {
             let classification = classifier.classify(value);
-            println!("test: {} ({}) classified as {}", value, label, classification);
             assert_eq!(*label, classification);
         }
     }
