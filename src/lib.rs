@@ -52,9 +52,17 @@ fn cmp_f64<M: PartialEq + PartialOrd>(a: &M, b: &M) -> Ordering {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
     fn it_works() {
-        // Basically, "assert false"
-        assert_eq!(2 + 2, 5);
+        let labeled_data = vec![(0, 5.0), (0, 2.0), (1, 1.0), (1, 3.0)];
+        let mut classifier = Knn::new(3, |f1: &f64, f2: &f64| (f1 - f2).abs());
+        classifier.train(&labeled_data);
+        for (label, value) in [(0, 10.0), (1, 0.0), (0, 3.3), (1, 2.9)].iter() {
+            let classification = classifier.classify(value);
+            println!("test: {} ({}) classified as {}", value, label, classification);
+            assert_eq!(*label, classification);
+        }
     }
 }
