@@ -1,33 +1,34 @@
 use supervised_learning::Classifier;
 use hash_histogram::HashHistogram;
 use std::cmp::Ordering;
+use std::hash::Hash;
 
-pub struct Knn<I, M, D: Fn(&I,&I) -> M> {
+pub struct Knn<L: Clone, I, M, D: Fn(&I,&I) -> M> {
     k: usize,
-    images: Vec<(u8,I)>,
+    images: Vec<(L,I)>,
     distance: D,
 }
 
-impl<I, M, D: Fn(&I,&I) -> M> Knn<I, M, D> {
-    pub fn new(k: usize, distance: D) -> Knn<I, M, D> {
+impl<L: Clone, I, M, D: Fn(&I,&I) -> M> Knn<L, I, M, D> {
+    pub fn new(k: usize, distance: D) -> Knn<L, I, M, D> {
         Knn {k, images: Vec::new(), distance}
     }
 
-    pub fn add_example(&mut self, img: (u8, I)) {
+    pub fn add_example(&mut self, img: (L, I)) {
         self.images.push(img);
     }
 }
 
-impl<I: Clone, M: Copy + PartialEq + PartialOrd, D: Fn(&I,&I) -> M> Classifier<I> for Knn<I, M, D> {
-    fn train(&mut self, training_images: &Vec<(u8,I)>) {
+impl<L: Clone+Ord+Hash+Eq, I: Clone, M: Copy + PartialEq + PartialOrd, D: Fn(&I,&I) -> M> Classifier<I,L> for Knn<L, I, M, D> {
+    fn train(&mut self, training_images: &Vec<(L,I)>) {
         for img in training_images {
-            self.add_example((img.0, img.1.clone()));
+            self.add_example((img.0.clone(), img.1.clone()));
         }
     }
 
-    fn classify(&self, example: &I) -> u8 {
-        let mut distances: Vec<(M, u8)> = self.images.iter()
-            .map(|img| ((self.distance)(example, &img.1), img.0))
+    fn classify(&self, example: &I) -> L {
+        let mut distances: Vec<(M, L)> = self.images.iter()
+            .map(|img| ((self.distance)(example, &img.1), img.0.clone()))
             .collect();
         distances.sort_by(cmp_f64);
 
@@ -40,7 +41,7 @@ impl<I: Clone, M: Copy + PartialEq + PartialOrd, D: Fn(&I,&I) -> M> Classifier<I
 }
 
 // Borrowed from: https://users.rust-lang.org/t/sorting-vector-of-vectors-of-f64/16264
-fn cmp_f64<M: Copy + PartialEq + PartialOrd>(a: &M, b: &M) -> Ordering {
+fn cmp_f64<M: PartialEq + PartialOrd>(a: &M, b: &M) -> Ordering {
     if a < b {
         return Ordering::Less;
     } else if a > b {
