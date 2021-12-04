@@ -1,5 +1,5 @@
 use supervised_learning::Classifier;
-use hash_histogram::HashHistogram;
+use hash_histogram::mode_values;
 use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -32,12 +32,8 @@ impl<L: Clone+Ord+Hash+Eq+Debug, I: Clone, M: Copy + PartialEq + PartialOrd, D: 
             .map(|img| ((self.distance)(example, &img.1), img.0.clone()))
             .collect();
         distances.sort_by(cmp_f64);
-
-        let mut labels = HashHistogram::new();
-        for item in distances.iter().take(self.k) {
-            labels.bump(&item.1);
-        }
-        labels.mode().unwrap().0
+        let iter = distances.iter().take(self.k).map(|(_, label)| label.clone());
+        mode_values(iter).unwrap()
     }
 }
 
@@ -62,6 +58,7 @@ mod tests {
         classifier.train(&labeled_data);
         for (label, value) in [(0, 10.0), (1, 0.0), (0, 3.3), (1, 2.9)].iter() {
             let classification = classifier.classify(value);
+            println!("{} ({}): classified as {}", value, label, classification);
             assert_eq!(*label, classification);
         }
     }
