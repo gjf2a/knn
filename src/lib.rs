@@ -1,16 +1,14 @@
 use supervised_learning::Classifier;
-use hash_histogram::mode_values;
+use hash_histogram::{KeyType, mode_values};
 use std::cmp::Ordering;
-use std::fmt::Debug;
-use std::hash::Hash;
 
-pub struct Knn<L: Clone, I, M, D: Fn(&I,&I) -> M> {
+pub struct Knn<L: KeyType, I, M, D: Fn(&I,&I) -> M> {
     k: usize,
     images: Vec<(L,I)>,
     distance: D,
 }
 
-impl<L: Clone, I, M, D: Fn(&I,&I) -> M> Knn<L, I, M, D> {
+impl<L: KeyType, I, M, D: Fn(&I,&I) -> M> Knn<L, I, M, D> {
     pub fn new(k: usize, distance: D) -> Knn<L, I, M, D> {
         Knn {k, images: Vec::new(), distance}
     }
@@ -20,7 +18,7 @@ impl<L: Clone, I, M, D: Fn(&I,&I) -> M> Knn<L, I, M, D> {
     }
 }
 
-impl<L: Clone+Ord+Hash+Eq+Debug, I: Clone, M: Copy + PartialEq + PartialOrd, D: Fn(&I,&I) -> M> Classifier<I,L> for Knn<L, I, M, D> {
+impl<L: KeyType + Ord, I: Clone, M: Copy + PartialEq + PartialOrd, D: Fn(&I,&I) -> M> Classifier<I,L> for Knn<L, I, M, D> {
     fn train(&mut self, training_images: &Vec<(L,I)>) {
         for img in training_images {
             self.add_example((img.0.clone(), img.1.clone()));
