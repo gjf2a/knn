@@ -21,7 +21,6 @@ impl<I, M, D: Fn(&I,&I) -> M> Knn<I, M, D> {
 impl<I: Clone, M: Copy + PartialEq + PartialOrd, D: Fn(&I,&I) -> M> Classifier<I> for Knn<I, M, D> {
     fn train(&mut self, training_images: &Vec<(u8,I)>) {
         for img in training_images {
-            // TODO: Bug report: self.add_example(img.clone()); // Flagged as type error by IDE, but compiles fine.
             self.add_example((img.0, img.1.clone()));
         }
     }
