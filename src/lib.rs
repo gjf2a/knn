@@ -1,32 +1,34 @@
 use supervised_learning::Classifier;
 use hash_histogram::HashHistogram;
 use std::cmp::Ordering;
+use std::sync::Arc;
 
-pub struct Knn<I, M, D: Fn(&I,&I) -> M> {
+#[derive(Clone)]
+pub struct Knn<T, V, D: Fn(&T,&T) -> V> {
     k: usize,
-    images: Vec<(u8,I)>,
-    distance: D,
+    examples: Vec<(u8,T)>,
+    distance: Arc<D>,
 }
 
-impl<I, M, D: Fn(&I,&I) -> M> Knn<I, M, D> {
-    pub fn new(k: usize, distance: D) -> Knn<I, M, D> {
-        Knn {k, images: Vec::new(), distance}
+impl<T, V, D: Fn(&T,&T) -> V> Knn<T, V, D> {
+    pub fn new(k: usize, distance: Arc<D>) -> Knn<T, V, D> {
+        Knn {k, examples: Vec::new(), distance}
     }
 
-    pub fn add_example(&mut self, img: (u8, I)) {
-        self.images.push(img);
+    pub fn add_example(&mut self, img: (u8, T)) {
+        self.examples.push(img);
     }
 }
 
-impl<I: Clone, M: Copy + PartialEq + PartialOrd, D: Fn(&I,&I) -> M> Classifier<I> for Knn<I, M, D> {
-    fn train(&mut self, training_images: &Vec<(u8,I)>) {
+impl<T: Clone, V: Copy + PartialEq + PartialOrd, D: Fn(&T,&T) -> V> Classifier<T> for Knn<T, V, D> {
+    fn train(&mut self, training_images: &Vec<(u8,T)>) {
         for img in training_images {
             self.add_example((img.0, img.1.clone()));
         }
     }
 
-    fn classify(&self, example: &I) -> u8 {
-        let mut distances: Vec<(M, u8)> = self.images.iter()
+    fn classify(&self, example: &T) -> u8 {
+        let mut distances: Vec<(V, u8)> = self.examples.iter()
             .map(|img| ((self.distance)(example, &img.1), img.0))
             .collect();
         distances.sort_by(cmp_f64);
@@ -40,7 +42,7 @@ impl<I: Clone, M: Copy + PartialEq + PartialOrd, D: Fn(&I,&I) -> M> Classifier<I
 }
 
 // Borrowed from: https://users.rust-lang.org/t/sorting-vector-of-vectors-of-f64/16264
-fn cmp_f64<M: Copy + PartialEq + PartialOrd>(a: &M, b: &M) -> Ordering {
+fn cmp_f64<V: Copy + PartialEq + PartialOrd>(a: &V, b: &V) -> Ordering {
     if a < b {
         return Ordering::Less;
     } else if a > b {
