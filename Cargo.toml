@@ -8,4 +8,6 @@ edition = "2021"
 
 [dependencies]
 supervised_learning = {git = "https://github.com/gjf2a/supervised_learning"}
+kmeans = {git = "https://github.com/gjf2a/kmeans"}
 hash_histogram = "0.6"
+trait-set = "0.3.0"
