@@ -15,6 +15,12 @@ pub struct Knn<L: LabelType, T, V, D: Fn(&T,&T) -> V> {
     distance: Arc<D>,
 }
 
+impl<L: LabelType, T: Clone, V: Copy + PartialEq + PartialOrd, D: Fn(&T,&T) -> V> Clone for  Knn<L, T, V, D> {
+    fn clone(&self) -> Self {
+        Self { k: self.k.clone(), examples: self.examples.clone(), distance: self.distance.clone() }
+    }
+}
+
 impl<L: LabelType, T, V, D: Fn(&T,&T) -> V> Knn<L, T, V, D> {
     pub fn new(k: usize, distance: Arc<D>) -> Self {
         Knn {k, examples: Vec::new(), distance}
@@ -28,7 +34,6 @@ impl<L: LabelType, T, V, D: Fn(&T,&T) -> V> Knn<L, T, V, D> {
 impl<L: LabelType, T: Clone, V: Copy + PartialEq + PartialOrd, D: Fn(&T,&T) -> V> Classifier<T,L> for Knn<L, T, V, D> {
     fn train(&mut self, training_images: &Vec<(L,T)>) {
         for img in training_images {
-            // TODO: Bug report: self.add_example(img.clone()); // Flagged as type error by IDE, but compiles fine.
             self.add_example((img.0.clone(), img.1.clone()));
         }
     }
@@ -57,16 +62,34 @@ fn cmp_f64<M: Copy + PartialEq + PartialOrd>(a: &M, b: &M) -> Ordering {
     return Ordering::Equal;
 }
 
-pub struct ClusteredKnn<L: LabelType, T, V: Copy + PartialEq + PartialOrd, D: Fn(&T,&T) -> V, M: Fn(&Vec<&T>) -> T> {
+pub struct ClusteredKnn<L: LabelType, T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd, D: Fn(&T,&T) -> V, M: Fn(&Vec<&T>) -> T> {
     knn: Knn<L, T, V, D>,
     clusters: Option<Kmeans<T, V, D>>,
     num_clusters: usize,
     mean: Arc<M>
 }
 
-impl <L: LabelType, T, V: Copy + PartialEq + PartialOrd, D: Fn(&T,&T) -> V, M: Fn(&Vec<&T>) -> T> ClusteredKnn<L, T, V, D, M> {
+impl<L: LabelType, T: Clone + PartialEq, V: Copy + Clone + PartialEq + PartialOrd + Into<f64>, D: Fn(&T,&T) -> V, M: Fn(&Vec<&T>) -> T> Clone for ClusteredKnn<L, T, V, D, M> {
+    fn clone(&self) -> Self {
+        Self { knn: self.knn.clone(), clusters: self.clusters.clone(), num_clusters: self.num_clusters.clone(), mean: self.mean.clone() }
+    }
+}    
+
+impl <L: LabelType, T: Clone + PartialEq, V: Copy + Clone + PartialEq + PartialOrd + Into<f64>, D: Fn(&T,&T) -> V, M: Fn(&Vec<&T>) -> T> ClusteredKnn<L, T, V, D, M> {
     pub fn new(k: usize, num_clusters: usize, distance: Arc<D>, mean: Arc<M>) -> Self {
         Self {knn: Knn::new(k, distance), clusters: None, num_clusters, mean}
+    }
+
+    pub fn train_from_clusters(&mut self, clusters: &Kmeans<T, V, D>, training_examples: &Vec<(L,T)>) {
+        let clusters: Kmeans<T, V, D> = clusters.clone();
+        
+        let mut labeler = Knn::new(self.knn.k, self.knn.distance.clone());
+        labeler.train(training_examples);
+        for example in clusters.copy_means() {
+            let label = labeler.classify(&example);
+            self.knn.add_example((label, example));
+        }
+        self.clusters = Some(clusters.clone());
     }
 }
 
