@@ -26,6 +26,10 @@ impl<L: LabelType, T, V, D: Fn(&T,&T) -> V> Knn<L, T, V, D> {
         Knn {k, examples: Vec::new(), distance}
     }
 
+    pub fn set_k(&mut self, k: usize) {
+        self.k = k;
+    }
+
     pub fn add_example(&mut self, example: (L, T)) {
         self.examples.push(example);
     }
