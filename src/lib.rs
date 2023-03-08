@@ -37,6 +37,10 @@ impl<L: LabelType, T, V, D: Fn(&T,&T) -> V> Knn<L, T, V, D> {
     pub fn add_example(&mut self, example: (L, T)) {
         self.examples.push(example);
     }
+
+    pub fn len(&self) -> usize {
+        self.examples.len()
+    }
 }
 
 impl<L: LabelType, T: Clone, V: Copy + PartialEq + PartialOrd, D: Fn(&T,&T) -> V> Classifier<T,L> for Knn<L, T, V, D> {
@@ -129,6 +133,7 @@ mod tests {
         let labeled_data = vec![(0, 5.0), (0, 2.0), (1, 1.0), (1, 3.0)];
         let mut classifier = Knn::new(3, Arc::new(|f1: &f64, f2: &f64| (f1 - f2).abs()));
         classifier.train(&labeled_data);
+        assert_eq!(classifier.len(), labeled_data.len());
         for (label, value) in [(0, 10.0), (1, 0.0), (0, 3.3), (1, 2.9)].iter() {
             let classification = classifier.classify(value);
             println!("{} ({}): classified as {}", value, label, classification);
