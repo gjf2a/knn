@@ -34,6 +34,10 @@ impl<L: LabelType, T, V, D: Fn(&T,&T) -> V> Knn<L, T, V, D> {
         self.k = k;
     }
 
+    pub fn get_k(&self) -> usize {
+        self.k
+    }
+
     pub fn add_example(&mut self, example: (L, T)) {
         self.examples.push(example);
     }
@@ -132,6 +136,7 @@ mod tests {
     fn test_knn() {
         let labeled_data = vec![(0, 5.0), (0, 2.0), (1, 1.0), (1, 3.0)];
         let mut classifier = Knn::new(3, Arc::new(|f1: &f64, f2: &f64| (f1 - f2).abs()));
+        assert_eq!(classifier.get_k(), 3);
         classifier.train(&labeled_data);
         assert_eq!(classifier.len(), labeled_data.len());
         for (label, value) in [(0, 10.0), (1, 0.0), (0, 3.3), (1, 2.9)].iter() {
