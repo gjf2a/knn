@@ -26,6 +26,10 @@ impl<L: LabelType, T, V, D: Fn(&T,&T) -> V> Knn<L, T, V, D> {
         Knn {k, examples: Vec::new(), distance}
     }
 
+    pub fn has_enough_examples(&self) -> bool {
+        self.examples.len() >= self.k
+    }
+
     pub fn set_k(&mut self, k: usize) {
         self.k = k;
     }

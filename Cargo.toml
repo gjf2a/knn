@@ -1,6 +1,6 @@
 [package]
 name = "knn"
-version = "0.2.6"
+version = "0.2.7"
 authors = ["gjf2a <ferrer@hendrix.edu>"]
 edition = "2021"
 
@@ -9,5 +9,5 @@ edition = "2021"
 [dependencies]
 supervised_learning = {git = "https://github.com/gjf2a/supervised_learning"}
 kmeans = {git = "https://github.com/gjf2a/kmeans"}
-hash_histogram = "0.6"
+hash_histogram = "0.7"
 trait-set = "0.3.0"
