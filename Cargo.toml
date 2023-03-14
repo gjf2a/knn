@@ -1,6 +1,6 @@
 [package]
 name = "knn"
-version = "0.2.10"
+version = "0.3.0"
 authors = ["gjf2a <ferrer@hendrix.edu>"]
 edition = "2021"
 

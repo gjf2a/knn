@@ -9,20 +9,20 @@ trait_set! {
     pub trait LabelType = KeyType + Ord;
 }
 
-pub struct Knn<L: LabelType, T, V, D: Fn(&T,&T) -> V> {
+pub struct Knn<L: LabelType, T, V> {
     k: usize,
     examples: Vec<(L,T)>,
-    distance: Arc<D>,
+    distance: Arc<fn(&T,&T) -> V>,
 }
 
-impl<L: LabelType, T: Clone, V: Copy + PartialEq + PartialOrd, D: Fn(&T,&T) -> V> Clone for  Knn<L, T, V, D> {
+impl<L: LabelType, T: Clone, V: Copy + PartialEq + PartialOrd> Clone for  Knn<L, T, V> {
     fn clone(&self) -> Self {
         Self { k: self.k.clone(), examples: self.examples.clone(), distance: self.distance.clone() }
     }
 }
 
-impl<L: LabelType, T, V, D: Fn(&T,&T) -> V> Knn<L, T, V, D> {
-    pub fn new(k: usize, distance: Arc<D>) -> Self {
+impl<L: LabelType, T, V> Knn<L, T, V> {
+    pub fn new(k: usize, distance: Arc<fn(&T,&T) -> V>) -> Self {
         Knn {k, examples: Vec::new(), distance}
     }
 
@@ -51,7 +51,7 @@ impl<L: LabelType, T, V, D: Fn(&T,&T) -> V> Knn<L, T, V, D> {
     }
 }
 
-impl<L: LabelType, T: Clone, V: Copy + PartialEq + PartialOrd, D: Fn(&T,&T) -> V> Classifier<T,L> for Knn<L, T, V, D> {
+impl<L: LabelType, T: Clone, V: Copy + PartialEq + PartialOrd> Classifier<T,L> for Knn<L, T, V> {
     fn train(&mut self, training_images: &Vec<(L,T)>) {
         for img in training_images {
             self.add_example((img.0.clone(), img.1.clone()));
@@ -82,26 +82,26 @@ fn cmp_f64<M: Copy + PartialEq + PartialOrd>(a: &M, b: &M) -> Ordering {
     return Ordering::Equal;
 }
 
-pub struct ClusteredKnn<L: LabelType, T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd, D: Fn(&T,&T) -> V, M: Fn(&Vec<&T>) -> T> {
-    knn: Knn<L, T, V, D>,
-    clusters: Option<Kmeans<T, V, D>>,
+pub struct ClusteredKnn<L: LabelType, T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd> {
+    knn: Knn<L, T, V>,
+    clusters: Option<Kmeans<T, V>>,
     num_clusters: usize,
-    mean: Arc<M>
+    mean: Arc<fn(&Vec<&T>) -> T>
 }
 
-impl<L: LabelType, T: Clone + PartialEq, V: Copy + Clone + PartialEq + PartialOrd + Into<f64>, D: Fn(&T,&T) -> V, M: Fn(&Vec<&T>) -> T> Clone for ClusteredKnn<L, T, V, D, M> {
+impl<L: LabelType, T: Clone + PartialEq, V: Copy + Clone + PartialEq + PartialOrd + Into<f64>> Clone for ClusteredKnn<L, T, V> {
     fn clone(&self) -> Self {
         Self { knn: self.knn.clone(), clusters: self.clusters.clone(), num_clusters: self.num_clusters.clone(), mean: self.mean.clone() }
     }
 }    
 
-impl <L: LabelType, T: Clone + PartialEq, V: Copy + Clone + PartialEq + PartialOrd + Into<f64>, D: Fn(&T,&T) -> V, M: Fn(&Vec<&T>) -> T> ClusteredKnn<L, T, V, D, M> {
-    pub fn new(k: usize, num_clusters: usize, distance: Arc<D>, mean: Arc<M>) -> Self {
+impl <L: LabelType, T: Clone + PartialEq, V: Copy + Clone + PartialEq + PartialOrd + Into<f64>> ClusteredKnn<L, T, V> {
+    pub fn new(k: usize, num_clusters: usize, distance: Arc<fn(&T,&T) -> V>, mean: Arc<fn(&Vec<&T>) -> T>) -> Self {
         Self {knn: Knn::new(k, distance), clusters: None, num_clusters, mean}
     }
 
-    pub fn train_from_clusters(&mut self, clusters: &Kmeans<T, V, D>, training_examples: &Vec<(L,T)>) {
-        let clusters: Kmeans<T, V, D> = clusters.clone();
+    pub fn train_from_clusters(&mut self, clusters: &Kmeans<T, V>, training_examples: &Vec<(L,T)>) {
+        let clusters: Kmeans<T, V> = clusters.clone();
         
         let mut labeler = Knn::new(self.knn.k, self.knn.distance.clone());
         labeler.train(training_examples);
@@ -113,7 +113,7 @@ impl <L: LabelType, T: Clone + PartialEq, V: Copy + Clone + PartialEq + PartialO
     }
 }
 
-impl<L: LabelType, T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Into<f64>, D: Fn(&T,&T) -> V, M: Fn(&Vec<&T>) -> T> Classifier<T,L> for ClusteredKnn<L, T, V, D, M> {
+impl<L: LabelType, T: Clone + PartialEq, V: Copy + PartialEq + PartialOrd + Into<f64>> Classifier<T,L> for ClusteredKnn<L, T, V> {
     fn train(&mut self, training_images: &Vec<(L,T)>) {
         let data = training_images.iter().map(|(_,t)| t.clone()).collect::<Vec<_>>();
         let clusters = Kmeans::new(self.num_clusters, &data, self.knn.distance.clone(), self.mean.clone());
